@@ -7,8 +7,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * @author Lenny
+ * Parses command lines in for of <Name>=<Value> that can then be referenced by name
+ */
 public class CmdLineParser
 {
+    /**
+     * Helper class for individual arguments, and name value pair
+     */
     public class CmdLineArg
     {
         private final String m_strArgName;
@@ -20,14 +27,28 @@ public class CmdLineParser
             m_strArgValue = strArgValue;
         }
 
+        /**
+         * Get the argument name
+         * @return name
+         */
         public String name()
         {
             return m_strArgName;
         }
+
+        /**
+         * Get the raw argument value
+         * @return value as string
+         */
         public String value()
         {
             return m_strArgValue;
         }
+
+        /**
+         * Get teh value as an integer
+         * @return the value parsed to an in or Ingteger.MIN_VALUE if the value is not an int
+         */
         public int asIntValue()
         {
             try
@@ -39,6 +60,11 @@ public class CmdLineParser
                 return Integer.MIN_VALUE;
             }
         }
+
+        /**
+         * Remoces quotes from a quoted string argument
+         * @return Returns the string value with quotes stripped
+         */
         public String asQuotedString()
         {
 
@@ -51,6 +77,11 @@ public class CmdLineParser
     }
     private static Pattern ARG_PARSER = Pattern.compile("(.*)=(.*)");
     private Map<String, CmdLineArg> m_mapArgs;
+
+    /**
+     * Construct the parser from a list of aommand line arguments
+     * @param listArgs - list of args from main
+     */
     public CmdLineParser(String[] listArgs)
     {
         m_mapArgs = Arrays.stream(listArgs)
@@ -66,6 +97,11 @@ public class CmdLineParser
             .collect(Collectors.toMap(CmdLineArg::name, cmdLineArg -> cmdLineArg ));
     }
 
+    /**
+     * Return the CmdLineArg object for the argument name
+     * @param strName - name of the command line argument
+     * @return - the comand line argumgent or null if none found
+     */
     public CmdLineArg getArg(String strName)
     {
         if(m_mapArgs.containsKey(strName))
@@ -75,5 +111,3 @@ public class CmdLineParser
         return null;
     }
 }
-
-// https://github.com/LennyThompson/JavaHttpServer.git

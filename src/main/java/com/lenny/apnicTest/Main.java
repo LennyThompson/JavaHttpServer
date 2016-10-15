@@ -1,32 +1,24 @@
 package com.lenny.apnicTest;
 
+import com.lenny.apnicTest.server.CmdLineParser;
 import com.lenny.apnicTest.server.Server;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Main
 {
-    private static Pattern PORT_MATCHER = Pattern.compile("PORT=(\\d+)");
-    public static void main(String[] args)
+    private static String PORT_ARG = "PORT";
+    public static void main(String[] args) throws IOException
     {
-        Optional<String> optFindPORT = Arrays.stream(args)
-                                             .filter(arg -> PORT_MATCHER.matcher(arg).matches())
-                                             .findFirst();
-        if(!optFindPORT.isPresent())
+        CmdLineParser cmdLineParser = new CmdLineParser(args);
+        if(cmdLineParser.getArg(PORT_ARG) == null)
         {
             System.out.print("Incorrect usage - use command line argument PORT=<port number> and try again.");
             return;
         }
 
-        Matcher matchPort = PORT_MATCHER.matcher(optFindPORT.get());
-
-        if(matchPort.matches())
+        if(cmdLineParser.getArg(PORT_ARG).asIntValue() != Integer.MIN_VALUE)
         {
-            int nPort = Integer.parseInt(matchPort.group(1));
             Thread runServer = new Thread()
             {
 
@@ -34,7 +26,7 @@ public class Main
                 {
                     try
                     {
-                        Server server = Server.createServer(nPort);
+                        Server server = Server.createServer(cmdLineParser.getArg(PORT_ARG).asIntValue());
                         server.initServer();
                     }
                     catch (IOException exc)
@@ -46,12 +38,15 @@ public class Main
 
             runServer.start();
 
-            while (true) ;
         }
         else
         {
             System.out.print("Incorrect usage - the command line argument PORT=<port number> port number must be an integer.");
         }
+        // Terminate on any command line input.
+
+        System.out.print("Enter any character to terminate.");
+        System.in.read();
 
     }
 }

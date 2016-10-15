@@ -8,8 +8,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Type with static helper methods to generate html for file system obejcts
+ */
 public class FileSystemHtmlBuilder
 {
+    /**
+     * Template for generate html around file system directory listing
+     * Expanded by String.format(HTML_TEMPLATE, strDirectories, strFiles)
+     */
     private static String HTML_TEMPLATE = "<!DOCTYPE html>\n" +
                                               "<html lang=\"en\">\n" +
                                               "<head>\n" +
@@ -25,6 +32,10 @@ public class FileSystemHtmlBuilder
                                               "<ul style=\"list-style-type:none\">%s</ul>\n" +
                                               "</body>\n" +
                                               "</html>";
+    /**
+     * Templates for generating individual file or directory listings into the HTML_TEMPLATE
+     * Will generate anchor links for relative directory paths and files
+     */
     private static String HTML_DIR_LISTING = "<li><i class=\"material-icons\" style=\"color:blue\">folder_open</i><a href=\"/%s\">%s</a></li>\n";
     private static String HTML_DIR_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:light_gray\">folder_open</i><i class=\"material-icons\">lock</i><a href=\"/%s\">%s</a></li>\n";
     private static String HTML_FILE_LISTING = "<li><i class=\"material-icons\" style=\"color:orange\">format_align_justify</i><a href=\"/%s\">%s</a></li>\n";
@@ -32,6 +43,12 @@ public class FileSystemHtmlBuilder
     private static String HTML_DIR_ERROR = "<p>ERROR: %s is not a directory!</p>\n";
     private static String HTML_FILE_ERROR = "<p>ERROR: %s is not a file!</p>\n";
 
+    /**
+     * Get html representing the filesystem at the dirSrc, with relative path links from the root
+     * @param dirRoot - the root directory for links
+     * @param dirSrc - the source directory to list
+     * @return - the html representing the fielsystem in HTML_TEMPLATE format
+     */
     public static String getHtmlFileSystem(File dirRoot, File dirSrc)
     {
         List<String> listDirs = getHtmlDirectoryStructure(dirRoot, dirSrc);
@@ -44,6 +61,14 @@ public class FileSystemHtmlBuilder
         return String.format(HTML_TEMPLATE, strOutputDirs, strOutputFiles);
     }
 
+    /**
+     * Generate the html response into HttpExchange object for the root and src directories provided.
+     * @param dirRoot - root directory for relative paths
+     * @param dirSrc - directory to list
+     * @param httpExchange - exchange object conatining the request / reposnse
+     * @return - true is successful
+     * @throws IOException
+     */
     public static boolean getHtmlDirectoryResponse(File dirRoot, File dirSrc, HttpExchange httpExchange) throws IOException
     {
         String strResponse = FileSystemHtmlBuilder.getHtmlFileSystem(dirRoot, dirSrc);
@@ -53,6 +78,13 @@ public class FileSystemHtmlBuilder
         return true;
     }
 
+    /**
+     * Convert the subdirectories of dirSrc into a list of html elements with anchor links to directories
+     * relative to the dirSrc
+     * @param dirRoot - root directory for relative paths
+     * @param dirSrc - directory to list subdirectories
+     * @return - List of html elements (fragments)
+     */
     public static List<String> getHtmlDirectoryStructure(File dirRoot, File dirSrc)
     {
         if(dirSrc.isDirectory())
@@ -73,6 +105,13 @@ public class FileSystemHtmlBuilder
         return null;
     }
 
+    /**
+     * Convert the files of dirSrc into a list of html elements with anchor links to files
+     * relative to the dirSrc
+     * @param dirRoot - root directory for relative paths
+     * @param dirSrc - directory to list files
+     * @return - List of html elements (fragments)
+     */
     public static List<String> getHtmlFileStructure(File dirRoot, File dirSrc)
     {
         if(dirSrc.isDirectory())
@@ -93,6 +132,12 @@ public class FileSystemHtmlBuilder
         return null;
     }
 
+    /**
+     * Helper function for getHtmlDirectoryStructure. Made public for unit testing
+     * @param dirRoot - root directory for relative paths
+     * @param dirFor - directory to build link for
+     * @return - Html element (fragment)
+     */
     public static String buildDirectoryLink(File dirFor, File dirRoot)
     {
         if(dirFor.isDirectory())
@@ -112,6 +157,12 @@ public class FileSystemHtmlBuilder
         return String.format(HTML_DIR_ERROR, dirFor.getName());
     }
 
+    /**
+     * Helper function for getHtmlFileStructure. Made public for unit testing
+     * @param dirRoot - root directory for relative paths
+     * @param fileFor - file to build link for
+     * @return - Html element (fragment)
+     */
     public static String buildFileLink(File fileFor, File dirRoot)
     {
         if(fileFor.isFile())
@@ -129,11 +180,27 @@ public class FileSystemHtmlBuilder
         return String.format(HTML_FILE_ERROR, fileFor.getName());
     }
 
+    /**
+     * Helper function.
+     * @param strFrom
+     * @return
+     */
     private static String replaceBackslash(String strFrom)
     {
         return strFrom.replace('\\', '/');
     }
 
+    /**
+     * Stream the file from fileRequest into the HttpExchange object
+     * This is a very naive implementation that should
+     * (i) Chunk large files
+     * (ii) Determine if the content of the file is suitable (ie only serve text, other with provide summary of file)
+     * The exchange response is set to 404 if the file does not exist or cannot be read.
+     * @param fileRequest - file to serve
+     * @param httpExchange - exchange object to stream to
+     * @return true on success
+     * @throws IOException
+     */
     public static boolean getFileContent(File fileRequest, HttpExchange httpExchange) throws IOException
     {
         if
