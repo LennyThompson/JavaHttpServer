@@ -8,9 +8,13 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -18,6 +22,10 @@ import static org.junit.Assert.*;
 
 public class TestFileSystemE2E
 {
+    public static final String USERNAME = "LennyThompson";
+    public static final String ACCESS_KEY = "b90ba3c3-2747-4524-8d2d-5c81b63d94ce";
+    public static final String SAUCE_URL = "http://" + USERNAME + ":" + ACCESS_KEY + "@localhost:4445/wd/hub";
+
     private static String CLASSSPATH = "/target/classes";
     private static String JAVA_CMDLINE = "java";
     private static String CLASSPATH_CMDLINE = "-cp";
@@ -52,10 +60,11 @@ public class TestFileSystemE2E
      * Will run at the root of the project, so can simply look for stuff that is there...
      */
     @Test
-    public void testStartSelenium()
+    public void testStartSelenium() throws MalformedURLException
     {
-        System.setProperty(WEBDRIVER_INIT, WEBDRIVER_PATH);
-        WebDriver webDriver = new ChromeDriver();
+        DesiredCapabilities caps = DesiredCapabilities.chrome();
+
+        WebDriver webDriver = new RemoteWebDriver(new URL(SAUCE_URL), caps);
         webDriver.navigate().to(LOCALHOST_URL);
         assertEquals("Title", webDriver.getTitle());
         List<WebElement> listLinks = webDriver.findElements(By.tagName("a"));
