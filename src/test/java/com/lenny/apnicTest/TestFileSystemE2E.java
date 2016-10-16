@@ -35,14 +35,19 @@ public class TestFileSystemE2E
     private static String LOCALHOST_URL = "localhost:5555";
 
     Process m_processHttpServer;
+    WebDriver m_driverTests;
+
     @Before
-    public void startProcess() throws IOException
+    public void startProcess() throws IOException, MalformedURLException
     {
         String strPath = Paths.get("").toAbsolutePath().toString();
         String strClasspath = strPath + CLASSSPATH;
         String strClassName = Main.class.getCanonicalName();
         ProcessBuilder builder = new ProcessBuilder(JAVA_CMDLINE, CLASSPATH_CMDLINE, strClasspath, strClassName, PORT_CMDLINE);
         m_processHttpServer = builder.start();
+
+        DesiredCapabilities caps = DesiredCapabilities.chrome();
+        m_driverTests = new RemoteWebDriver(new URL(SAUCE_URL), caps);
     }
 
     @After
@@ -53,6 +58,11 @@ public class TestFileSystemE2E
             m_processHttpServer.destroy();
             m_processHttpServer = null;
         }
+
+        if(m_driverTests != null)
+        {
+            m_driverTests.quit();
+        }
     }
 
     /**
@@ -60,29 +70,26 @@ public class TestFileSystemE2E
      * Will run at the root of the project, so can simply look for stuff that is there...
      */
     @Test
-    public void testStartSelenium() throws MalformedURLException
+    public void testStartSelenium()
     {
-        DesiredCapabilities caps = DesiredCapabilities.chrome();
-
-        WebDriver webDriver = new RemoteWebDriver(new URL(SAUCE_URL), caps);
-        webDriver.navigate().to(LOCALHOST_URL);
-        assertEquals("Title", webDriver.getTitle());
-        List<WebElement> listLinks = webDriver.findElements(By.tagName("a"));
+        m_driverTests.navigate().to(LOCALHOST_URL);
+        assertEquals("Title", m_driverTests.getTitle());
+        List<WebElement> listLinks = m_driverTests.findElements(By.tagName("a"));
         assertFalse(listLinks.isEmpty());
         for(WebElement eleLnk : listLinks)
         {
             assertNotNull(eleLnk.getAttribute("href"));
         }
 
-        WebElement webElement = webDriver.findElement(By.id("dir-target"));
+        WebElement webElement = m_driverTests.findElement(By.id("dir-target"));
         assertNotNull(webElement);
         assertEquals("target", webElement.getText());
 
-        webElement = webDriver.findElement(By.id("file-pom.xml"));
+        webElement = m_driverTests.findElement(By.id("file-pom.xml"));
         assertNotNull(webElement);
         assertEquals("pom.xml", webElement.getText());
 
-        webDriver.close();
+        m_driverTests.close();
     }
 
     /**
@@ -91,17 +98,15 @@ public class TestFileSystemE2E
     @Test
     public void testGotoSubdirectorySelenium()
     {
-        System.setProperty(WEBDRIVER_INIT, WEBDRIVER_PATH);
-        WebDriver webDriver = new ChromeDriver();
-        webDriver.navigate().to(LOCALHOST_URL);
-        assertEquals("Title", webDriver.getTitle());
+        m_driverTests.navigate().to(LOCALHOST_URL);
+        assertEquals("Title", m_driverTests.getTitle());
 
-        webDriver.findElement(By.id("dir-target")).click();
+        m_driverTests.findElement(By.id("dir-target")).click();
 
-        WebElement webElement = webDriver.findElement(By.id("dir-classes"));
+        WebElement webElement = m_driverTests.findElement(By.id("dir-classes"));
         assertNotNull(webElement);
         assertEquals("classes", webElement.getText());
 
-        webDriver.close();
+        m_driverTests.close();
     }
 }
