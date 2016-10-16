@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
  */
 public class FileSystemHtmlBuilder
 {
+    private static int HTTP_200 = 200;
     /**
      * Template for generate html around file system directory listing
      * Expanded by String.format(HTML_TEMPLATE, strDirectories, strFiles)
@@ -26,6 +28,7 @@ public class FileSystemHtmlBuilder
                                               "      rel=\"stylesheet\">" +
                                               "</head>\n" +
                                               "<body>\n" +
+                                              "<h1>Current directory: %s</h1>\n" +
                                               "<h1>Directories</h1>\n" +
                                               "<ul style=\"list-style-type:none\">%s</ul>\n" +
                                               "<h1>Files</h1>\n" +
@@ -36,12 +39,13 @@ public class FileSystemHtmlBuilder
      * Templates for generating individual file or directory listings into the HTML_TEMPLATE
      * Will generate anchor links for relative directory paths and files
      */
-    private static String HTML_DIR_LISTING = "<li><i class=\"material-icons\" style=\"color:blue\">folder_open</i><a href=\"/%s\">%s</a></li>\n";
-    private static String HTML_DIR_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:light_gray\">folder_open</i><i class=\"material-icons\">lock</i><a href=\"/%s\">%s</a></li>\n";
-    private static String HTML_FILE_LISTING = "<li><i class=\"material-icons\" style=\"color:orange\">format_align_justify</i><a href=\"/%s\">%s</a></li>\n";
-    private static String HTML_FILE_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:gray\">format_align_justify</i><a href=\"/%s\">%s</a></li>\n";
-    private static String HTML_DIR_ERROR = "<p>ERROR: %s is not a directory!</p>\n";
-    private static String HTML_FILE_ERROR = "<p>ERROR: %s is not a file!</p>\n";
+    private static String DIR_UP_LISTING = ".. (one level up)";
+    private static String HTML_DIR_LISTING = "<li><i class=\"material-icons\" style=\"color:blue\">folder_open</i><a id=\"dir-%s\" href=\"/%s\">%s</a></li>\n";
+    private static String HTML_DIR_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:light_gray\">folder_open</i><i class=\"material-icons\">lock</i><p id=\"dir-read-only-%s\">%s</p></li>\n";
+    private static String HTML_FILE_LISTING = "<li><i class=\"material-icons\" style=\"color:orange\">format_align_justify</i><a id=\"file-%s\" href=\"/%s\">%s</a></li>\n";
+    private static String HTML_FILE_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:gray\">format_align_justify</i><p id=\"file-read-only-%s\">%s</p></li>\n";
+    private static String HTML_DIR_ERROR = "<p style=\"color:red\">ERROR: %s is not a directory!</p>\n";
+    private static String HTML_FILE_ERROR = "<p style=\"color:red\">ERROR: %s is not a file!</p>\n";
 
     /**
      * Get html representing the filesystem at the dirSrc, with relative path links from the root
@@ -58,7 +62,7 @@ public class FileSystemHtmlBuilder
         String strOutputFiles = listFiles.stream()
             .collect(Collectors.joining());
 
-        return String.format(HTML_TEMPLATE, strOutputDirs, strOutputFiles);
+        return String.format(HTML_TEMPLATE, dirSrc.getPath(), strOutputDirs, strOutputFiles);
     }
 
     /**
@@ -72,7 +76,7 @@ public class FileSystemHtmlBuilder
     public static boolean getHtmlDirectoryResponse(File dirRoot, File dirSrc, HttpExchange httpExchange) throws IOException
     {
         String strResponse = FileSystemHtmlBuilder.getHtmlFileSystem(dirRoot, dirSrc);
-        httpExchange.sendResponseHeaders(200, strResponse.length());
+        httpExchange.sendResponseHeaders(HTTP_200, strResponse.length());
         httpExchange.getResponseBody().write(strResponse.getBytes());
 
         return true;
@@ -89,7 +93,13 @@ public class FileSystemHtmlBuilder
     {
         if(dirSrc.isDirectory())
         {
-            return Arrays.stream(
+            List<String> listDirs = new ArrayList<>();
+            if(!dirSrc.getParent().isEmpty())
+            {
+                listDirs.add(buildDirectoryLink(new File(dirSrc.getParent()), dirRoot, true));
+            }
+            listDirs.addAll(
+                Arrays.stream(
                 dirSrc.listFiles(new FileFilter()
                 {
                     @Override
@@ -98,9 +108,11 @@ public class FileSystemHtmlBuilder
                         return file.isDirectory();
                     }
                 })
-            )
+               )
             .map(dir -> buildDirectoryLink(dir, dirRoot))
-            .collect(Collectors.toList());
+            .collect(Collectors.toList())
+            );
+            return listDirs;
         }
         return null;
     }
@@ -140,18 +152,31 @@ public class FileSystemHtmlBuilder
      */
     public static String buildDirectoryLink(File dirFor, File dirRoot)
     {
+        return buildDirectoryLink(dirFor, dirRoot, false);
+    }
+    public static String buildDirectoryLink(File dirFor, File dirRoot, boolean bUpOneLevel)
+    {
         if(dirFor.isDirectory())
         {
             Path pathFromRoot = Paths.get(dirRoot.getPath()).relativize(Paths.get(dirFor.getPath()));
             if(dirFor.canRead())
             {
-                return String.format(HTML_DIR_LISTING, replaceBackslash(pathFromRoot.toString()), pathFromRoot
-                                                                                                      .getFileName());
+                return String.format
+                          (
+                              HTML_DIR_LISTING,
+                              pathFromRoot.getFileName(),
+                              replaceBackslash(pathFromRoot.toString()),
+                              bUpOneLevel ? ".. (one level up)" : pathFromRoot.getFileName()
+                          );
             }
             else
             {
-                return String.format(HTML_DIR_LISTING_DISABLE, replaceBackslash(pathFromRoot.toString()), pathFromRoot
-                                                                                                      .getFileName());
+                return String.format
+                          (
+                              HTML_DIR_LISTING_DISABLE,
+                              pathFromRoot.getFileName(),
+                              pathFromRoot.getFileName()
+                          );
             }
         }
         return String.format(HTML_DIR_ERROR, dirFor.getName());
@@ -170,11 +195,22 @@ public class FileSystemHtmlBuilder
             Path pathFromRoot = Paths.get(dirRoot.getPath()).relativize(Paths.get(fileFor.getPath()));
             if(fileFor.canRead())
             {
-                return String.format(HTML_FILE_LISTING, replaceBackslash(pathFromRoot.toString()), fileFor.getName());
+                return String.format
+                          (
+                              HTML_FILE_LISTING,
+                              fileFor.getName(),
+                              replaceBackslash(pathFromRoot.toString()),
+                              fileFor.getName()
+                          );
             }
             else
             {
-                return String.format(HTML_FILE_LISTING_DISABLE, replaceBackslash(pathFromRoot.toString()), fileFor.getName());
+                return String.format
+                          (
+                              HTML_FILE_LISTING_DISABLE,
+                              fileFor.getName(),
+                              fileFor.getName()
+                          );
             }
         }
         return String.format(HTML_FILE_ERROR, fileFor.getName());
@@ -210,7 +246,7 @@ public class FileSystemHtmlBuilder
            fileRequest.canRead()
         )
         {
-            httpExchange.sendResponseHeaders(200, fileRequest.length());
+            httpExchange.sendResponseHeaders(HTTP_200, fileRequest.length());
             InputStream inputStream = new FileInputStream(fileRequest);
             byte[] byteBuffer = new byte[4096];
             int nBytesRead = 0;
@@ -221,7 +257,6 @@ public class FileSystemHtmlBuilder
             }
             return true;
         }
-        httpExchange.sendResponseHeaders(404, 0);
         return false;
     }
 }

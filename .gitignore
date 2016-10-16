@@ -1,5 +1,6 @@
 /.idea
 /target
+/out
 /lib
 .metadata
 .settings

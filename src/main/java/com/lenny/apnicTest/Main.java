@@ -17,9 +17,10 @@ public class Main
             return;
         }
 
+        Thread runServer = null;
         if(cmdLineParser.getArg(PORT_ARG).asIntValue() != Integer.MIN_VALUE)
         {
-            Thread runServer = new Thread()
+            runServer = new Thread()
             {
 
                 public void run()
@@ -47,6 +48,5 @@ public class Main
 
         System.out.print("Enter any character to terminate.");
         System.in.read();
-
     }
 }

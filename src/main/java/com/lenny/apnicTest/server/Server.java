@@ -7,6 +7,7 @@ import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 /**
@@ -14,6 +15,14 @@ import java.nio.file.Paths;
  */
 public class Server
 {
+    /**
+     * Define some basic HTTP error codes and response strings
+     */
+    private static int HTTP_404 = 404;
+    private static String HTTP_ACCESS_DENIED = "Error 404: Access to %s denied";
+    private static int HTTP_405 = 405;
+    private static String HTTP_ILLEGAL_METHOD = "Error 405: Method %s not supported";
+
     HttpServer m_httpServer;
 
     /**
@@ -64,6 +73,18 @@ public class Server
     }
 
     /**
+     * Terminate the http server - assumes it is safe to stop a server that has never been started...
+     */
+    public void endServer()
+    {
+        if(m_httpServer != null)
+        {
+            m_httpServer.stop(10);
+            m_httpServer = null;
+        }
+    }
+
+    /**
      * Helper class for handler for requests.
      * Interprets all requests as paths to files or directories
      * Will respond with an error if the method is not 'GET'.
@@ -98,7 +119,7 @@ public class Server
                 case "DELETE":
                 case "":
                 default:
-                    handleIncorrectRequest(httpExchange);
+                    handleIncorrectRequest(httpExchange, HTTP_405, HTTP_ILLEGAL_METHOD, httpExchange.getRequestMethod());
                     break;
             }
         }
@@ -110,12 +131,15 @@ public class Server
          */
         private void handleGetRequest(HttpExchange httpExchange) throws IOException
         {
-            File dirRoot = Paths.get("").toAbsolutePath().toFile();
+            File fileCurr = Paths.get("").toAbsolutePath().toFile();
+            Path pathRoot = Paths.get(fileCurr.getPath()).getRoot();
+            File dirRoot = pathRoot.toAbsolutePath().toFile();
             String strResponse = "";
             // Treat a root request differently
-            if(httpExchange.getRequestURI().getPath().compareTo("/") == 0)
+            if(httpExchange.getRequestURI().getPath().compareTo("/") == 0 && httpExchange.getRequestURI().getQuery() == null)
             {
-                FileSystemHtmlBuilder.getHtmlDirectoryResponse(dirRoot, dirRoot, httpExchange);
+                File dirInit = Paths.get("").toAbsolutePath().toFile();
+                FileSystemHtmlBuilder.getHtmlDirectoryResponse(dirRoot, dirInit, httpExchange);
             }
             else
             {
@@ -134,14 +158,18 @@ public class Server
                     {
                         // Respond with file content
 
-                        FileSystemHtmlBuilder.getFileContent(fileRequest, httpExchange);
+                        if(!FileSystemHtmlBuilder.getFileContent(fileRequest, httpExchange))
+                        {
+                            handleIncorrectRequest(httpExchange, HTTP_404, HTTP_ACCESS_DENIED, fileRequest.getName());
+                            return;
+                        }
                     }
                 }
                 else
                 {
                     // No such directory or file - respond with an error
 
-                    handleIncorrectRequest(httpExchange);
+                    handleIncorrectRequest(httpExchange, HTTP_404, HTTP_ACCESS_DENIED, fileRequest.getName());
                     return;
                 }
             }
@@ -149,9 +177,19 @@ public class Server
             httpExchange.close();
         }
 
-        private void handleIncorrectRequest(HttpExchange httpExchange)
+        private void handleIncorrectRequest
+            (
+                HttpExchange httpExchange,
+                int nErrorNo,
+                String strErrorResponse,
+                String strErrorExtra
+            ) throws IOException
         {
-            // TODO...
+            String strMsg = strErrorExtra.isEmpty() ? strErrorResponse : String.format(strErrorResponse, strErrorExtra);
+            httpExchange.sendResponseHeaders(nErrorNo, strMsg.length());
+            httpExchange.getResponseBody().write(strMsg.getBytes());
+            httpExchange.getResponseBody().flush();
+            httpExchange.close();
         }
     }
 }

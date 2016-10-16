@@ -24,6 +24,8 @@ public class TestCmdLineParser
     {
         String[] listArgs = new String[]{ "PORT=port1" };
         CmdLineParser cmdLineParser = new CmdLineParser(listArgs);
-        assertNull(cmdLineParser.getArg("PORT"));
+        assertNotNull(cmdLineParser.getArg("PORT"));
+        assertEquals("port1", cmdLineParser.getArg("PORT").value());
+        assertEquals(Integer.MIN_VALUE, cmdLineParser.getArg("PORT").asIntValue());
     }
 }
