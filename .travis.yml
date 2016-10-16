@@ -2,5 +2,5 @@ language: java
 
 addons:
   sauce_connect:
-    username: "LennyThompson "
+    username: "LennyThompson"
     access_key: "b90ba3c3-2747-4524-8d2d-5c81b63d94ce"
