@@ -44,6 +44,7 @@ public class TestFileSystemE2E
         String strClasspath = strPath + CLASSSPATH;
         String strClassName = Main.class.getCanonicalName();
         ProcessBuilder builder = new ProcessBuilder(JAVA_CMDLINE, CLASSPATH_CMDLINE, strClasspath, strClassName, PORT_CMDLINE);
+        builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         m_processHttpServer = builder.start();
 
         DesiredCapabilities caps = DesiredCapabilities.chrome();
