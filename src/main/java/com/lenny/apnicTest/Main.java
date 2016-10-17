@@ -46,7 +46,7 @@ public class Main
         }
         // Terminate on any command line input.
 
-        System.out.print("Enter any character to terminate.");
+        System.out.println("Enter any character to terminate.");
         System.in.read();
     }
 }

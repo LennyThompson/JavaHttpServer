@@ -26,6 +26,7 @@ public class Server
 
     private HttpServer m_httpServer;
     private int m_nPort;
+    private File m_dirRoot;
 
     /**
      * Private constructor to ensure that creation paraters are consistent (currently only the port number)
@@ -148,28 +149,33 @@ public class Server
          */
         private void handleGetRequest(HttpExchange httpExchange) throws IOException
         {
-            File fileCurr = Paths.get("").toAbsolutePath().toFile();
-            Path pathRoot = Paths.get(fileCurr.getPath()).getRoot();
-            File dirRoot = pathRoot.toAbsolutePath().toFile();
             String strResponse = "";
-            // Treat a root request differently
-            if(httpExchange.getRequestURI().getPath().compareTo("/") == 0 && httpExchange.getRequestURI().getQuery() == null)
+            // If this is  the initial request, start from the runtime directory (m_dirRoot).
+            if
+            (
+                httpExchange.getRequestURI().getPath().compareTo("/") == 0
+                &&
+                m_dirRoot == null
+            )
             {
+                File fileCurr = Paths.get("").toAbsolutePath().toFile();
+                Path pathRoot = Paths.get(fileCurr.getPath()).getRoot();
+                m_dirRoot = pathRoot.toAbsolutePath().toFile();
                 File dirInit = Paths.get("").toAbsolutePath().toFile();
-                FileSystemHtmlBuilder.getHtmlDirectoryResponse(dirRoot, dirInit, httpExchange);
+                FileSystemHtmlBuilder.getHtmlDirectoryResponse(m_dirRoot, dirInit, httpExchange);
             }
             else if(httpExchange.getRequestURI().getPath().indexOf(FAVICON_ICO)< 0)
             {
                 // Otherwise determine if the request is for file or a directory
 
-                File fileRequest = new File(dirRoot, httpExchange.getRequestURI().getPath());
+                File fileRequest = new File(m_dirRoot, httpExchange.getRequestURI().getPath());
                 if(fileRequest.exists())
                 {
                     if (fileRequest.isDirectory())
                     {
                         // Respond w3ith directory content
 
-                        FileSystemHtmlBuilder.getHtmlDirectoryResponse(dirRoot, fileRequest, httpExchange);
+                        FileSystemHtmlBuilder.getHtmlDirectoryResponse(m_dirRoot, fileRequest, httpExchange);
                     }
                     else
                     {

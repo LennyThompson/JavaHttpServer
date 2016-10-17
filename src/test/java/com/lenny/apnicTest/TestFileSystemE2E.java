@@ -30,8 +30,6 @@ public class TestFileSystemE2E
     private static String JAVA_CMDLINE = "java";
     private static String CLASSPATH_CMDLINE = "-cp";
     private static String PORT_CMDLINE = "PORT=5555";
-    private static String WEBDRIVER_INIT = "webdriver.chrome.driver";
-    private static String WEBDRIVER_PATH = "C:/WebDriver/Chrome/chromedriver.exe";
     private static String LOCALHOST_URL = "localhost:5555";
 
     Process m_processHttpServer;
