@@ -46,6 +46,10 @@ public class TestFileSystemE2E
         m_processHttpServer = builder.start();
 
         DesiredCapabilities caps = DesiredCapabilities.chrome();
+        if(System.getenv("TRAVIS_JOB_NUMBER") != null)
+        {
+            caps.setCapability("tunnel-identifier", System.getenv("TRAVIS_JOB_NUMBER"));
+        }
         m_driverTests = new RemoteWebDriver(new URL(SAUCE_URL), caps);
     }
 
