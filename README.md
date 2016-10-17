@@ -6,12 +6,12 @@ Simple java application that serves the host file system to a browser.
 This is very straightforward.
 
 1. Server
-* encapsulates an HttpServer object, and provides the request handler implementation
+  * encapsulates an HttpServer object, and provides the request handler implementation
 2. FileSystemHtmlBuilder
-* encapsulates the building of response html for filesystem objects.
-* uses static html templates to generate the content into a simple html page
-* html content includes an href link to _GET_ the item in the html (directory or file)
-* functionally subdivided for unit testing
+  * encapsulates the building of response html for filesystem objects.
+  * uses static html templates to generate the content into a simple html page
+  * html content includes an href link to _GET_ the item in the html (directory or file)
+  * functionally subdivided for unit testing
 
 The main function creates a thread that runs the server object.
 
