@@ -22,8 +22,10 @@ public class Server
     private static String HTTP_ACCESS_DENIED = "Error 404: Access to %s denied";
     private static int HTTP_405 = 405;
     private static String HTTP_ILLEGAL_METHOD = "Error 405: Method %s not supported";
+    private static final String FAVICON_ICO = "favicon.ico";
 
-    HttpServer m_httpServer;
+    private HttpServer m_httpServer;
+    private int m_nPort;
 
     /**
      * Private constructor to ensure that creation paraters are consistent (currently only the port number)
@@ -33,6 +35,7 @@ public class Server
     private Server(int nPortNo) throws IOException
     {
         m_httpServer = HttpServer.create(new InetSocketAddress(nPortNo), 0);
+        m_nPort = nPortNo;
     }
 
     /**
@@ -65,6 +68,8 @@ public class Server
      */
     public void initServer() throws IOException
     {
+        System.out.format("Starting new HttpServer on port: %d\n", m_nPort);
+
         // Only handler is for root requests - all requests will be routed through this handler
 
         m_httpServer.createContext("/", new FileSystemHandler());
@@ -79,8 +84,10 @@ public class Server
     {
         if(m_httpServer != null)
         {
+            System.out.format("Terminating HttpServer on port: %d\n", m_nPort);
             m_httpServer.stop(10);
             m_httpServer = null;
+            m_nPort  = 0;
         }
     }
 
@@ -141,7 +148,7 @@ public class Server
                 File dirInit = Paths.get("").toAbsolutePath().toFile();
                 FileSystemHtmlBuilder.getHtmlDirectoryResponse(dirRoot, dirInit, httpExchange);
             }
-            else
+            else if(httpExchange.getRequestURI().getPath().indexOf(FAVICON_ICO)< 0)
             {
                 // Otherwise determine if the request is for file or a directory
 
