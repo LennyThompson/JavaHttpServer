@@ -41,9 +41,9 @@ public class FileSystemHtmlBuilder
      */
     private static String DIR_UP_LISTING = ".. (one level up)";
     private static String HTML_DIR_LISTING = "<li><i class=\"material-icons\" style=\"color:blue\">folder_open</i><a id=\"dir-%s\" href=\"/%s\">%s</a></li>\n";
-    private static String HTML_DIR_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:light_gray\">folder_open</i><i class=\"material-icons\">lock</i><p id=\"dir-read-only-%s\">%s</p></li>\n";
+    private static String HTML_DIR_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:light_gray\">folder_open</i><i class=\"material-icons\" style=\"color:pink\">lock</i>%s</li>\n";
     private static String HTML_FILE_LISTING = "<li><i class=\"material-icons\" style=\"color:orange\">format_align_justify</i><a id=\"file-%s\" href=\"/%s\">%s</a></li>\n";
-    private static String HTML_FILE_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:gray\">format_align_justify</i><p id=\"file-read-only-%s\">%s</p></li>\n";
+    private static String HTML_FILE_LISTING_DISABLE = "<li><i class=\"material-icons\" style=\"color:gray\">format_align_justify</i><i class=\"material-icons\" style=\"color:pink\">lock</i>%s</li>\n";
     private static String HTML_DIR_ERROR = "<p style=\"color:red\">ERROR: %s is not a directory!</p>\n";
     private static String HTML_FILE_ERROR = "<p style=\"color:red\">ERROR: %s is not a file!</p>\n";
 
@@ -94,7 +94,12 @@ public class FileSystemHtmlBuilder
         if(dirSrc.isDirectory())
         {
             List<String> listDirs = new ArrayList<>();
-            if(!dirSrc.getParent().isEmpty())
+            if
+            (
+                dirSrc.getParent()  != null
+                &&
+                !dirSrc.getParent().isEmpty()
+            )
             {
                 listDirs.add(buildDirectoryLink(new File(dirSrc.getParent()), dirRoot, true));
             }
@@ -174,7 +179,6 @@ public class FileSystemHtmlBuilder
                 return String.format
                           (
                               HTML_DIR_LISTING_DISABLE,
-                              pathFromRoot.getFileName(),
                               pathFromRoot.getFileName()
                           );
             }
@@ -208,7 +212,6 @@ public class FileSystemHtmlBuilder
                 return String.format
                           (
                               HTML_FILE_LISTING_DISABLE,
-                              fileFor.getName(),
                               fileFor.getName()
                           );
             }
