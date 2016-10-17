@@ -68,7 +68,12 @@ public class Server
      */
     public void initServer() throws IOException
     {
-        System.out.format("Starting new HttpServer on port: %d\n", m_nPort);
+        System.out.format
+                (
+                        "Starting new HttpServer on port: %d at root: %s\n",
+                        m_nPort,
+                        Paths.get("").toAbsolutePath().toString()
+                );
 
         // Only handler is for root requests - all requests will be routed through this handler
 
@@ -84,7 +89,12 @@ public class Server
     {
         if(m_httpServer != null)
         {
-            System.out.format("Terminating HttpServer on port: %d\n", m_nPort);
+            System.out.format
+                    (
+                        "Terminating HttpServer on port: %d at root: %s\n",
+                        m_nPort,
+                        Paths.get("").toAbsolutePath().toString()
+                    );
             m_httpServer.stop(10);
             m_httpServer = null;
             m_nPort  = 0;
